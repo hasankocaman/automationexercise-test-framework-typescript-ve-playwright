@@ -23,13 +23,27 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: 'html',
-  /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
+  /* Tüm projeler için ortak ayarlar. Bkz: https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
+    /* 'await page.goto('')' gibi eylemlerde kullanılacak temel URL. */
     baseURL: 'https://hasankocaman.github.io/automationexercise/',
 
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-    trace: 'on-first-retry',
+    /* Başarısız testi tekrar denerken trace (iz) topla. Bkz: https://playwright.dev/docs/trace-viewer */
+    // 'on' -> Her test için trace dosyası oluşturur. 'retain-on-failure' -> Sadece başarısız olanlar için.
+    trace: 'on',
+
+    // Video kaydı alalım
+    // Selenium: Ekstra kütüphaneler (Monte Screen Recorder) gerekirdi.
+    // Playwright: Config'den tek satırla açılır.
+    video: 'on',
+
+    // Ekran Görüntüsü (Screenshot)
+    screenshot: 'on',
+
+    // Varsayılan olarak headless (tarayıcı görünmez) çalışsın mı?
+    // true -> tarayıcıyı görmezsin (hızlı, CI/CD için uygun)
+    // false -> tarayıcıyı görürsün (debug için uygun)
+    headless: true,
   },
 
   /* Configure projects for major browsers */

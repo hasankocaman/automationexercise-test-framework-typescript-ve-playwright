@@ -1,66 +1,134 @@
 # Playwright vs Selenium: Proje Yapısı ve Mimari Karşılaştırması
 
-Bu proje, Java ve Selenium geçmişine sahip otomasyon mühendislerinin Playwright ve TypeScript dünyasına kolayca adapte olabilmesi için hazırlanmıştır. Aşağıda proje dosyalarının ve mimari kavramların karşılaştırmalı açıklamalarını bulabilirsin.
+Bu proje, Java ve Selenium geçmişine sahip otomasyon mühendislerinin Playwright ve TypeScript dünyasına kolayca adapte olabilmesi için hazırlanmıştır. 
 
 ## 📂 Klasör ve Dosya Yapısı
 
-### 1. `package.json`
-*   **Java/Maven Karşılığı:** `pom.xml`
-*   **Ne İşe Yarar?** Projenin kimliğidir. Kullanılacak kütüphaneleri (dependencies) ve proje içi çalıştırılabilir komutları (scripts) burada tanımlarız.
-*   **Örnek:** `mvn test` komutunu `scripts` bölümünde tanımladığımız kısayollarla (örn: `npm test`) çalıştırırız.
-
-### 2. `package-lock.json`
-*   **Java/Maven Karşılığı:** Tam bir karşılığı yoktur ama "Maven Dependency Tree"nin donmuş halidir.
-*   **Ne İşe Yarar?** Projede kullanılan kütüphanelerin tam versiyonlarını kilitler. Bu sayede proje başka bir bilgisayarda kurulduğunda (örneğin CI/CD ortamında) *birebir* aynı versiyonların yüklenmesini garanti eder.
-
-### 3. `node_modules/`
-*   **Java/Maven Karşılığı:** `Maven Dependencies` (External Libraries)
-*   **Ne İşe Yarar?** `npm install` dediğimizde internetten indirilen tüm kütüphaneler buraya fiziksel olarak kaydedilir. Java'da bu genellikle `.m2` klasöründe global olarak tutulurken, Node.js projelerinde projenin içine indirilir. **Bu klasörü asla Git'e göndermeyiz (`.gitignore` dosyasında ekli olmalıdır).**
-
-### 4. `playwright.config.ts`
-*   **Java/Maven Karşılığı:** `testng.xml` + `BaseTest/ConfigReader` sınıfları
-*   **Ne İşe Yarar?** Testlerin beyni burasıdır.
-    *   Hangi tarayıcılarda koşulacak? (Chrome, Firefox, Safari...)
-    *   Paralel mi koşulacak?
-    *   Ekran görüntüsü veya video alınacak mı?
-    *   Base URL nedir?
-    *   Test fail olursa kaç kere 'retry' edilecek?
-    Tüm bu ayarları kod yazmadan buradan yönetiriz.
-
-### 5. `tests/` Klasörü
-*   **Java/Maven Karşılığı:** `src/test/java`
-*   **Ne İşe Yarar?** Test senaryolarımızın (spec dosyaları) bulunduğu yerdir. Playwright varsayılan olarak bu klasördeki `.spec.ts` ile biten dosyaları test olarak algılar.
-
-### 6. `tests/homepage.spec.ts`
-*   **Java/Maven Karşılığı:** `HomepageTest.java` (Test Class)
-*   **Yapı:**
-    *   `test(...)` bloğu -> `@Test` metoduna eşittir.
-    *   `test.beforeEach(...)` bloğu -> `@BeforeMethod` metoduna eşittir.
-    *   `test.afterAll(...)` bloğu -> `@AfterClass` metoduna eşittir.
+| Dosya/Klasör | Java/Maven Karşılığı | Açıklama |
+| :--- | :--- | :--- |
+| `package.json` | `pom.xml` | Projenin kimliği. Kütüphaneleri (dependencies) ve komutları (scripts) tutar. |
+| `package-lock.json` | (Dependency Tree) | Kütüphane versiyonlarını kilitler, herkesin aynı versiyonu kullanmasını sağlar. |
+| `node_modules/` | Maven Libraries | İndirilen kütüphanelerin fiziksel deposudur. Git'e atılmaz. |
+| `playwright.config.ts`| `testng.xml` | Test konfigürasyonu (Tarayıcı, Paralel Koşum, Video, URL vb.). |
+| `tests/` | `src/test/java` | Test senaryolarının (`.spec.ts`) bulunduğu klasör. |
+| `tests/homepage.spec.ts`| `HomepageTest.java` | Örnek bir test dosyası. |
 
 ## 🏗 Mimari Farklılıklar (Önemli!)
 
 ### 1. Bağlantı Protokolü (WebDriver vs DevTools)
-*   **Selenium:** Tarayıcı ile konuşmak için **WebDriver** protokolünü kullanır. Arada bir "Driver" (chromedriver.exe) vardır ve HTTP istekleri ile tarayıcıya "şunu yap", "bunu yap" der. Bu bazen yavaşlıklara ve "flaky" (kararsız) testlere yol açabilir.
-*   **Playwright:** Tarayıcı ile **Doğrudan (WebSocket)** üzerinden konuşur (Chrome DevTools Protocol vb.). Arada bir çevirmen yoktur. Bu sayede çok daha hızlıdır ve tarayıcının ağ trafiğine (network) bile müdahale edebilir.
+*   **Selenium:** `WebDriver` protokolü ile HTTP istekleri üzerinden tarayıcıyla konuşur (Yavaş, aracı var).
+*   **Playwright:** `WebSocket` üzerinden tarayıcıyla **doğrudan** konuşur (Hızlı, aracı yok, Network kontrolü var).
 
 ### 2. Bekleme Stratejisi (Sync vs Async & Auto-Wait)
-*   **Selenium (Sync):** Kod satır satır çalışır. Element henüz sayfada yoksa hata verir. `Thread.sleep` veya `WebDriverWait` (Explicit Wait) ile manuel olarak bekleme eklemeniz gerekir.
-*   **Playwright (Async):** Modern web uygulamaları asenkron çalışır, Playwright da öyle. `await` anahtar kelimesi ile işlemlerin tamamlanmasını bekler. En büyük gücü **Auto-Wait** özelliğidir. Bir butona tıkla dediğinizde; Playwright o butonun DOM'da oluşmasını, görünür olmasını, animasyonunun bitmesini ve tıklanabilir olmasını **otomatik olarak** bekler. Sizin bekleme kodu yazmanıza gerek kalmaz.
+*   **Selenium:** Senkrondur. `Thread.sleep` veya `WebDriverWait` ile manuel bekleme gerekir.
+*   **Playwright:** Asenkrondur (`await`). **Auto-Wait** özelliği sayesinde elementin hazır olmasını (görünürlük, tıklanabilirlik) otomatik bekler.
 
 ### 3. İzolasyon (Browser Context)
-*   **Selenium:** Her test için yeni bir browser açıp kapatmak maliyetlidir, bu yüzden genelde aynı driver instance'ı paylaşılır. Bu da çerezlerin (cookies) diğer testleri etkilemesine yol açabilir.
-*   **Playwright:** **Browser Context** kavramını kullanır. Tek bir tarayıcı (Browser) açar ama her test için milisaniyeler içinde yepyeni, tamamen izole (Incognito benzeri) bir "bağlam" (Context) oluşturur. Her testin çerezleri, local storage'ı ayrıdır. Test bitince bu bağlam yok edilir. Çok hızlıdır.
+*   **Selenium:** Tek browser instance'ı paylaşılır (Cookie çakışması riski).
+*   **Playwright:** **Browser Context** kullanır. Tek tarayıcı içinde her test için milisaniyeler içinde izole, tertemiz bir "Incognito" oturumu açar.
+
+---
+
+## 🛠 Son Yapılan Değişiklikler ve Hata Giderme Günlüğü (Troubleshooting Log)
+
+Proje geliştirilirken karşılaştığımız test hatalarını ve bunları nasıl adım adım çözdüğümüzü aşağıda bulabilirsin. Bu, gerçek dünyada karşılaşacağın senaryolara örnektir.
+
+### Vaka 1: Dosya Yükleme (File Upload) Hatası
+
+**Durum:** `tests/advanced_scenarios.spec.ts` dosyasında dosya yükleme testi yazdık.
+**Hata:** Test, yükleme sonrası başarı mesajını bulamadığı için fail oldu.
+**Beklenti:** `[data-testid="upload-status"]` elementinde dosya isminin yazması.
+**Gerçekleşen:** Playwright bu elementi bulamadı (Timeout).
+
+**Nasıl Çözdük? (Adım Adım):**
+1.  **Analiz:** Siteye manuel olarak veya Browser Subagent (yardımcı robot) ile gittik.
+2.  **Keşif:** Dosya yükledikten sonra çıkan yeşil başarı mesajına sağ tıklayıp "İncele" (Inspect) dedik.
+3.  **Farkındalık:** Elementin `data-testid` değerinin bizim tahmin ettiğimiz gibi `upload-status` DEĞİL, **`uploaded-file-info`** olduğunu gördük.
+4.  **Düzeltme:** Test dosyasındaki locator'ı `page.getByTestId('uploaded-file-info')` olarak güncelledik.
+5.  **Sonuç:** Test geçti (Passed).
+
+### Vaka 2: Shadow DOM Metin Kontrolü Hatası
+
+**Durum:** Shadow DOM içindeki butona tıklama testi.
+**Hata:** Test, butona tıkladıktan sonra metnin "Clicked!" olarak değişmesini beklediği için fail oldu.
+**Beklenti:** `await expect(button).toHaveText('Clicked!')` satırının geçmesi.
+**Gerçekleşen:** Buton metni değişmedi, hala "Click Me..." yazıyordu.
+
+**Nasıl Çözdük? (Adım Adım):**
+1.  **Şüphe:** Acaba buton tıklanmıyor mu? Yoksa tıklanıyor ama metin mi değişmiyor?
+2.  **Kontrol:** Siteye gidip butona tıkladık.
+3.  **Farkındalık:** Butonun aslında sadece *tıklanabilir* bir demo butonu olduğunu, tıklandığında üzerindeki yazının DEĞİŞMEDİĞİNİ fark ettik. Test senaryomuz, sitenin gerçek davranışıyla uyuşmuyordu.
+4.  **Düzeltme:** Hatalı olan `toHaveText('Clicked!')` assertion'ını kaldırdık. Yerine butonun görünür olduğunu ve tıklanabildiğini doğrulayan adımlar ekledik.
+5.  **Sonuç:** Test, sitenin gerçek davranışına uygun hale geldi ve geçti.
+
+---
+
+## 🔍 Playwright ile Locator Nasıl Alınır? (Basit Rehber)
+
+Bir elementi test kodunda bulmak için (Locate etmek) şu stratejiyi izleriz:
+
+### Senaryo: "Advanced Scenarios" butonuna tıklamak istiyorum.
+
+**Adım 1: Elementi İncele**
+Tarayıcıda bonuna sağ tıkla -> **İncele (Inspect)** de.
+
+**Adım 2: HTML Koduna Bak**
+Şöyle bir kod gördüğünü varsayalım:
+```html
+<button id="adv-btn" class="nav-btn" data-testid="advanced-tab">
+    Advanced Scenarios
+</button>
+```
+
+**Adım 3: Strateji Seçimi (Öncelik Sırasına Göre)**
+
+1.  **Playwright'ın Favorisi (Kullanıcı Odaklı):**
+    Eğer elementte belirgin bir yazı varsa, en kolayı budur.
+    ```typescript
+    await page.getByText('Advanced Scenarios').click();
+    ```
+
+2.  **Test ID (Varsa En Sağlamı):**
+    Geliştiriciler `data-testid` eklediyse, bu test için özeldir ve değişme ihtimali azdır.
+    ```typescript
+    await page.getByTestId('advanced-tab').click();
+    ```
+
+3.  **Role (Erişilebilirlik Odaklı):**
+    Buton, Link, Başlık gibi roller üzerinden gitmek.
+    ```typescript
+    await page.getByRole('button', { name: 'Advanced Scenarios' }).click();
+    ```
+
+4.  **CSS Selector (Klasik Yöntem):**
+    ID veya Class üzerinden gitmek.
+    *   ID ile: `page.locator('#adv-btn')`
+    *   Class ile: `page.locator('.nav-btn')` (Dikkat: Birden fazla elementte aynı class olabilir!)
+
+5.  **XPath (Son Çare):**
+    Çok karmaşık ve kırılgan olabilir, mecbur kalmadıkça önermeyiz.
+    ```typescript
+    page.locator('//button[text()="Advanced Scenarios"]')
+    ```
+
+### Özet Tablo
+
+| HTML Özelliği | Playwright Komutu | Not |
+| :--- | :--- | :--- |
+| `data-testid="submit"` | `getByTestId('submit')` | **En Tavsiye Edilen** |
+| `<button>Kaydet</button>` | `getByRole('button', { name: 'Kaydet' })` | Çok Sağlam |
+| `<div>Hoşgeldiniz</div>` | `getByText('Hoşgeldiniz')` | Basit ve Hızlı |
+| `id="user-name"` | `locator('#user-name')` | Standart |
+| `placeholder="Adınız"` | `getByPlaceholder('Adınız')` | Inputlar için harika |
 
 ## 🚀 Özet: Java Geliştiricisi İçin Sözlük
 
 | TypeScript/Playwright | Java/Selenium |
 | :--- | :--- |
-| `npm install` | `mvn clean install` (bağımlılıkları indirme kısmı) |
-| `package.json` | `pom.xml` |
+| `npm install` | `mvn clean install` |
 | `playwright.config.ts` | `testng.xml` |
 | `spec.ts` dosyası | `Test` Class |
-| `test('name', ...)` | `@Test public void name()...` |
+| `test('name', ...)` | `@Test` method |
 | `await page.goto(...)` | `driver.get(...)` |
 | `await expect(loc).toBeVisible()` | `Assert.assertTrue(elem.isDisplayed())` |
 | `console.log(...)` | `System.out.println(...)` |

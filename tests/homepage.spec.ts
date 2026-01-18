@@ -3,12 +3,15 @@ import { test, expect } from '@playwright/test';
 // 'test' bloğu, TestNG'deki @Test anotasyonuna benzer.
 // 'test' fonksiyonu iki parametre alır: testin adı ve asenkron (async) bir fonksiyon.
 // { page } fixture'ı, Selenium'daki WebDriver instance'ına benzer, ancak her test için izole edilmiştir.
-test('has title', async ({ page }) => {
-
-    // 1. Sayfaya git
-    // Selenium: driver.get("https://...");
-    // Playwright: playwright.config.ts dosyasında baseURL tanımladığımız için sadece '/' yeterli.
+// beforeAll -> @BeforeClass (Sadece bir kere çalışır)
+// beforeEach -> @BeforeMethod (Her testten önce çalışır)
+test.beforeEach(async ({ page }) => {
+    // Her testten önce ana sayfaya git
     await page.goto('https://hasankocaman.github.io/automationexercise/');
+});
+
+test('baslik kontrolu (has title)', async ({ page }) => {
+    // 1. Sayfaya gitme işlemi artık beforeEach içinde yapılıyor.
 
     // 2. Başlığı doğrula (Assertion)
     // Selenium: Assert.assertEquals(driver.getTitle(), "beklenen başlık");
@@ -19,8 +22,8 @@ test('has title', async ({ page }) => {
     await expect(page).toHaveTitle(/Automation Testing Playground/);
 });
 
-test('check header visibility', async ({ page }) => {
-    await page.goto('https://hasankocaman.github.io/automationexercise/');
+test('header gorunurluk kontrolu (header visibility)', async ({ page }) => {
+    // Sayfaya gitme işlemi otomatik yapıldı.
 
     // Locator bulma stratejisi
     // Selenium: By.cssSelector(...) veya By.xpath(...)
